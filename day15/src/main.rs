@@ -1,28 +1,68 @@
-use std::io::BufRead;
+use std::{io::BufRead, thread};
 use regex::Regex;
+use std::sync::Arc;
 
 fn main() {
     let lines = read_in_file();
     let sensors = parse_lines(lines);
     let max = 4_000_000;
-    for i in 0..=max {
-        if i%10_000 == 0 {
-            println!("Doing round {}", i);
-        }
-        
-    }
-    
-    //println!("Grid: {:?}", &grid);
 
-    //let count = count_positions(&grid);
-    //println!("Solution is {}", count);
+    for sensor in &sensors {
+        let perim = every_point_with_given_distance_from(&sensor, (sensor.r+1) as usize, max);
+        for point in perim {
+            if !is_point_contained_in_sensors(point.0, point.1, &sensors) {
+                println!("Solution is {}, {}", point.0, point.1);
+                println!("Frequency is {}", point.0*(max as i64) + point.1);
+            }
+        }
+    }
+}
+
+fn every_point_with_given_distance_from(sensor: &Sensor, d: usize, max: usize) -> Vec<(i64, i64)> {
+    let mut points = Vec::with_capacity(d*4);
+
+    let dist = d as i64;
+    let leftmost = (sensor.x - dist, sensor.y);
+    let upmost = (sensor.x, sensor.y - dist);
+    let rightmost = (sensor.x + dist, sensor.y);
+    let downmost = (sensor.x, dist + sensor.y);
+
+    points.push(leftmost);
+    points.push(rightmost);
+    points.push(upmost);
+    points.push(downmost);
+
+    for i in 1..=d-1 {
+        let inc = i as i64;
+        points.push((leftmost.0+inc, leftmost.1-inc));
+        points.push((rightmost.0-inc, rightmost.1+inc));
+        points.push((upmost.0+inc, upmost.1+inc));
+        points.push((downmost.0-inc, downmost.1-inc));
+    }
+
+    points.into_iter()
+        .filter(|p| p.0 > 0 && p.1 > 0 && p.0 <= max as i64 && p.1 <= max as i64)
+        .collect()
+}
+
+fn is_point_contained_in_sensors(x: i64, y: i64, sensors: &Vec<Sensor>) -> bool {
+    for sensor in sensors {
+        if is_point_contained_in_sensor(x, y, sensor) {
+            return true;
+        }
+    }
+    return false;
+}
+
+fn is_point_contained_in_sensor(x: i64, y: i64, sensor: &Sensor) -> bool {
+    distance(x, y, sensor.x, sensor.y) <= sensor.r
 }
 
 fn count_positions(line: &Vec<char>) -> usize {
     line.into_iter().filter(|&&c| c == '#').count()
 }
 
-fn make_grid(sensors: &Vec<Sensor>, line: i64) -> (Vec<char>, i64) {
+fn make_grid(sensors: &Vec<Sensor>, line: i64) -> (Vec<char>, i64, i64) {
     let min_x = sensors.into_iter().map(|s| s.x-s.r).min().unwrap();
     let max_x = sensors.into_iter().map(|s| s.x+s.r).max().unwrap();
     let min_y = sensors.into_iter().map(|s| s.y-s.r).min().unwrap();
@@ -42,7 +82,7 @@ fn make_grid(sensors: &Vec<Sensor>, line: i64) -> (Vec<char>, i64) {
         draw_sensor(&mut grid, sensor, buffer_x, buffer_y, line);
     }
 
-    (grid, buffer_x)
+    (grid, buffer_x, buffer_y)
 }
 
 fn draw_sensor(grid: &mut Vec<char>, sensor: &Sensor, buffer_x: i64, buffer_y: i64, line: i64) {
