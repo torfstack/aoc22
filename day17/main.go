@@ -16,7 +16,7 @@ func main() {
 	fmt.Printf("input: %s\n", input)
 
 	for spawner.turn <= rocks {
-		direction := jet.nextDirection()
+		direction := jet.NextDirection()
 		if structure.CanMove(direction, cave) {
 			structure.Move(direction)
 			//fmt.Printf("Moved || cave:\n%v\n", cave)
@@ -48,7 +48,7 @@ func NewJet(pattern []byte) Jet {
 	}
 }
 
-func (j *Jet) nextDirection() byte {
+func (j *Jet) NextDirection() byte {
 	j.count++
 	return j.pattern[j.count%len(j.pattern)]
 }
