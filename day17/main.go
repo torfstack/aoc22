@@ -6,15 +6,16 @@ import (
 )
 
 func main() {
+	rocks := 2022
 	input := ParseInput()
 	jet := NewJet(input)
-	cave := NewCave(2022 * 4)
+	cave := NewCave(rocks * 4)
 	spawner := NewSpawner()
 	structure := spawner.Spawn(cave)
 
 	fmt.Printf("input: %s\n", input)
 
-	for spawner.turn <= 2022 {
+	for spawner.turn <= rocks {
 		direction := jet.nextDirection()
 		if structure.CanMove(direction, cave) {
 			structure.Move(direction)
@@ -142,7 +143,7 @@ func ParseInput() []byte {
 	// read in file called input.txt
 	// parse the file into a slice of Direction
 	// return the slice
-	dat, err := os.ReadFile("input")
+	dat, err := os.ReadFile("example")
 	if err != nil {
 		fmt.Println("Error reading file {}, err")
 		panic(err)
