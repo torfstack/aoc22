@@ -16,6 +16,19 @@ type Moveable interface {
 	Move(byte)
 }
 
+func (s *Structure) Start() Position {
+	minX, minY := 8, 100000000000000
+	for _, p := range s.positions {
+		if p.X < minX {
+			minX = p.X
+		}
+		if p.Y < minY {
+			minY = p.Y
+		}
+	}
+	return Position{minX, minY}
+}
+
 func (s *Structure) CanFall(c Cave) bool {
 	for _, p := range s.positions {
 		if p.Y == 0 {
