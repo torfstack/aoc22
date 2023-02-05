@@ -2,57 +2,14 @@ use std::{collections::{HashMap, VecDeque}, fs::File, io::Read};
 
 fn main() {
     let monkeys = read_in_file_called_input_as_monkeys();
-    let solution = compute_hman(&monkeys);
+    let solution = compute_root(&monkeys);
     println!("Solution: {}", solution);
 }
 
-fn compute_hman(monkeys: &HashMap<String, Monkey>) -> i64 {
-    let monkey = &monkeys["root"];
-    let magic: i64 = 94625185243550;
-    match monkey {
-        Monkey::Valued(_) => panic!(),
-        Monkey::Computation(a, b, _) => {
-            let mut start: i64 = 3715;
-            let mut end: i64 = 3716;
-            let mut multiplier = 100000000;
-            println!("Multiplier: {}", multiplier);
-            loop {
-                for i in 10*start..=10*end {
-                    let mut clone = monkeys.clone();
-                    clone.insert(String::from("humn"), Monkey::Valued(multiplier*i));
-                    let value_a = compute_name(a, &clone);
-                    let value_b = compute_name(b, &clone);
-                    println!("{} {} {}", i, value_a, value_b);
-                    if value_a == magic {
-                        return clone["humn"].value();
-                    }
-                    if value_a < magic {
-                        end = i;
-                        start = i-1;
-                        multiplier = multiplier / 10;
-                        break;
-                    }
-                }
-            }
-        }
-    }
-}
-
-fn compute_name(name: &String, monkeys: &HashMap<String, Monkey>) -> i64 {
-    let stack = compute_stack(name, monkeys);
-    let mut clone = monkeys.clone();
-    stack.iter().rev().for_each(|m| {
-        let monkey = clone.get(m).unwrap();
-        let value = compute(monkey, &clone);
-        clone.insert(m.clone(), Monkey::Valued(value));
-    });
-    clone[name].value()
-}
-
-fn compute_stack(name: &String, monkeys: &HashMap<String, Monkey>) -> Vec<String> {
-    let mut stack: Vec<String> = vec![name.clone()];
+fn compute_root(monkeys: &HashMap<String, Monkey>) -> i64 {
+    let mut stack = vec!["root"];
     let mut queue = VecDeque::new();
-    queue.push_front(name);
+    queue.push_front("root");
     while !queue.is_empty() {
         let m = queue.pop_back();
         match &monkeys.get(m.unwrap()) {
@@ -60,13 +17,19 @@ fn compute_stack(name: &String, monkeys: &HashMap<String, Monkey>) -> Vec<String
             Some(Monkey::Computation(a, b, _)) => {
                 queue.push_front(a);
                 queue.push_front(b);
-                stack.push(a.clone());
-                stack.push(b.clone());
+                stack.push(a);
+                stack.push(b);
             },
             None => panic!("Unknown monkey")
         }
     }
-    stack
+    let mut clone = monkeys.clone();
+    stack.iter().rev().for_each(|m| {
+        let monkey = &monkeys.get(&m.to_string()).unwrap();
+        clone.insert(m.to_string(), Monkey::Valued(compute(monkey, &clone)));
+    });
+
+    clone["root"].value()
 }
 
 fn compute(monkey: &Monkey, monkeys: &HashMap<String, Monkey>) -> i64 {
